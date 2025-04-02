@@ -4,6 +4,7 @@ import pytest
 
 import minitorch
 from minitorch import Context, ScalarFunction, ScalarHistory
+from minitorch.autodiff import topological_sort
 
 # ## Task 1.3 - Tests for the autodifferentiation machinery.
 
@@ -74,7 +75,7 @@ def test_chain_rule3() -> None:
     back = list(back)
     assert len(back) == 2
     variable, deriv = back[1]
-    # assert variable.name == var.name
+    assert variable.name == var.name
     assert deriv == 5 * 10
 
 
@@ -89,16 +90,50 @@ def test_chain_rule4() -> None:
     back = list(back)
     assert len(back) == 2
     variable, deriv = back[0]
-    # assert variable.name == var1.name
+    assert variable.name == var1.name
     assert deriv == 5 * (10 + 1)
     variable, deriv = back[1]
-    # assert variable.name == var2.name
+    assert variable.name == var2.name
     assert deriv == 5 * 5
 
 
 # ## Task 1.4 - Run some simple backprop tests
 
 # Main tests are in test_scalar.py
+
+
+@pytest.mark.task1_4_0
+def test_toposort1() -> None:
+    from minitorch.autodiff import topological_sort
+
+    x = minitorch.Scalar(1.0, name="x")
+    y = minitorch.Scalar(2.0, name="y")
+    z = Function2.apply(x, y)
+    z.name = "z"
+    topo = topological_sort(z)
+
+    assert list(map(lambda x: x.name, topo)) == ["z", "y", "x"]
+
+
+@pytest.mark.task1_4_0
+def test_toposort2() -> None:
+    var0 = minitorch.Scalar(0, name="var0")
+    var1 = Function1.apply(0, var0)
+    var1.name = "var1"
+    var2 = Function1.apply(0, var1)
+    var2.name = "var2"
+    var3 = Function1.apply(0, var1)
+    var3.name = "var3"
+    var4 = Function1.apply(var2, var3)
+    var4.name = "var4"
+    topo = topological_sort(var4)
+
+    name_counts = {}
+    for name in [f"var{i}" for i in range(5)]:
+        name_counts[name] = sum([e.name == name for e in topo])
+    print([e.name for e in topo])
+    print(name_counts)
+    assert all([c == 1 for _, c in name_counts.items()])
 
 
 @pytest.mark.task1_4
@@ -123,10 +158,13 @@ def test_backprop2() -> None:
 @pytest.mark.task1_4
 def test_backprop3() -> None:
     # Example 3: F1(F1(0, v1), F1(0, v1))
-    var1 = minitorch.Scalar(0)
+    var1 = minitorch.Scalar(0, name="var1")
     var2 = Function1.apply(0, var1)
+    var2.name = "var2"
     var3 = Function1.apply(0, var1)
+    var3.name = "var3"
     var4 = Function1.apply(var2, var3)
+    var4.name = "var4"
     var4.backward(d_output=5)
     assert var1.derivative == 10
 
@@ -134,10 +172,15 @@ def test_backprop3() -> None:
 @pytest.mark.task1_4
 def test_backprop4() -> None:
     # Example 4: F1(F1(0, v1), F1(0, v1))
-    var0 = minitorch.Scalar(0)
+    var0 = minitorch.Scalar(0, name="var0")
     var1 = Function1.apply(0, var0)
+    var1.name = "var1"
     var2 = Function1.apply(0, var1)
+    var2.name = "var2"
     var3 = Function1.apply(0, var1)
+    var3.name = "var3"
     var4 = Function1.apply(var2, var3)
+    var4.name = "var4"
     var4.backward(d_output=5)
+
     assert var0.derivative == 10

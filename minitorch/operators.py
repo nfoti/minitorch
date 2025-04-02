@@ -27,7 +27,8 @@ def add(x: float, y: float) -> float:
 
 def neg(x: float) -> float:
     """Negation"""
-    return -x
+    # have to cast because some tests failed otherwise since ints were called
+    return -float(x)
 
 
 def lt(x: float, y: float) -> float:
