@@ -1,3 +1,4 @@
+import numpy as np
 import pytest
 from hypothesis import given
 from hypothesis.strategies import DataObject, data
@@ -118,6 +119,33 @@ def test_shape_broadcast() -> None:
 
     c = minitorch.shape_broadcast((2, 5), (5,))
     assert c == (2, 5)
+
+
+@pytest.mark.task2_2
+def test_broadcast_index() -> None:
+    big_shape = (5, 5)
+    little_shape = (5, 5)
+    big_index = (2, 3)
+    answer = (2, 3)
+    out_index = np.zeros_like(little_shape)
+    minitorch.broadcast_index(big_index, big_shape, little_shape, out_index)
+    assert (out_index == answer).all()
+
+    big_shape = (5, 5)
+    little_shape = (1,)
+    big_index = (2, 3)
+    answer = (0, 0)
+    out_index = np.zeros_like(little_shape)
+    minitorch.broadcast_index(big_index, big_shape, little_shape, out_index)
+    assert (out_index == answer).all()
+
+    big_shape = (1, 5, 5)
+    little_shape = (5, 5)
+    big_index = (0, 2, 3)
+    answer = (2, 3)
+    out_index = np.zeros_like(little_shape)
+    minitorch.broadcast_index(big_index, big_shape, little_shape, out_index)
+    assert (out_index == answer).all()
 
 
 @given(tensor_data())
