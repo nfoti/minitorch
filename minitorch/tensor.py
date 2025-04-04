@@ -345,11 +345,15 @@ class Tensor:
 
     @property
     def parents(self) -> Iterable[Variable]:
-        assert self.history is not None
+        # NICK: Check that empty list works here
+        #assert self.history is not None
+        if self.history is None:
+            return []
         return self.history.inputs
 
     def chain_rule(self, d_output: Any) -> Iterable[Tuple[Variable, Any]]:
         h = self.history
+        
         assert h is not None
         assert h.last_fn is not None
         assert h.ctx is not None

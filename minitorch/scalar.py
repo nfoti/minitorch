@@ -160,11 +160,11 @@ class Scalar:
     def chain_rule(self, d_output: Any) -> Iterable[Tuple[Variable, Any]]:
         h = self.history
 
-        if self.is_constant() or self.is_leaf():
-            return [(h.inputs,)]
-        # assert h is not None
-        # assert h.last_fn is not None
-        # assert h.ctx is not None
+        #if self.is_constant() or self.is_leaf():
+        #    return [(h.inputs,)]
+        assert h is not None
+        assert h.last_fn is not None
+        assert h.ctx is not None
 
         # The tuples to return are the h.inputs (which are Variables) paired
         # with their gradients from backward of last_fn.
@@ -175,9 +175,6 @@ class Scalar:
         try:
             return [(v, d) for v, d in zip(h.inputs, back)]
         except TypeError:
-            import pdb
-
-            pdb.set_trace()
             return 0.0
 
     def backward(self, d_output: Optional[float] = None) -> None:

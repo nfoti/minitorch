@@ -143,13 +143,13 @@ class Sigmoid(ScalarFunction):
 
     @staticmethod
     def forward(ctx: Context, a: float) -> float:
-        ctx.save_for_backward(a)
-        return operators.sigmoid(a)
+        sig_a = operators.sigmoid(a)
+        ctx.save_for_backward(sig_a)
+        return sig_a
 
     @staticmethod
     def backward(ctx: Context, d_output: float) -> float:
-        (a,) = ctx.saved_values
-        sig_a = operators.sigmoid(a)
+        (sig_a,) = ctx.saved_values
         return sig_a * (1.0 - sig_a) * d_output
 
 

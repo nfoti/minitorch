@@ -9,8 +9,9 @@ import numpy.typing as npt
 from numpy import array, float64
 from typing_extensions import TypeAlias
 
-from .operators import prod
+from .operators import prod, reduce
 from .scalar_functions import wrap_tuple
+from minitorch import operators
 
 MAX_DIMS = 32
 

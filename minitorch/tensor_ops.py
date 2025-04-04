@@ -20,8 +20,7 @@ if TYPE_CHECKING:
 
 
 class MapProto(Protocol):
-    def __call__(self, x: Tensor, out: Optional[Tensor] = ..., /) -> Tensor:
-        ...
+    def __call__(self, x: Tensor, out: Optional[Tensor] = ..., /) -> Tensor: ...
 
 
 class TensorOps:
@@ -136,7 +135,7 @@ class SimpleOps(TensorOps):
 
     @staticmethod
     def zip(
-        fn: Callable[[float, float], float]
+        fn: Callable[[float, float], float],
     ) -> Callable[["Tensor", "Tensor"], "Tensor"]:
         """
         Higher-order tensor zip function ::
@@ -231,7 +230,7 @@ class SimpleOps(TensorOps):
 
 
 def tensor_map(
-    fn: Callable[[float], float]
+    fn: Callable[[float], float],
 ) -> Callable[[Storage, Shape, Strides, Storage, Shape, Strides], None]:
     """
     Low-level implementation of tensor map between
@@ -264,14 +263,30 @@ def tensor_map(
         in_shape: Shape,
         in_strides: Strides,
     ) -> None:
-        # TODO: Implement for Task 2.3.
-        raise NotImplementedError('Need to implement for Task 2.3')
+        # Simple version::
+        #    for i:
+        #        for j:
+        #            out[i, j] = fn(a[i, j])
+        # Broadcasted version (`a` might be smaller than `out`) ::
+        #    for i:
+        #        for j:
+        #            out[i, j] = fn(a[i, 0])
+
+        bcshape = shape_broadcast(out_shape, in_shape)
+        bcshape = np.array(list(bcshape), dtype=np.int32)
+        idx = np.zeros(len(bcshape), dtype=np.int32)
+        in_idx = np.zeros(len(in_shape), dtype=np.int32)
+        for li in range(len(out)):
+            to_index(li, bcshape, idx)
+            broadcast_index(idx, bcshape, in_shape, in_idx)
+            in_li = index_to_position(in_idx, in_strides)
+            out[li] = fn(in_storage[in_li])
 
     return _map
 
 
 def tensor_zip(
-    fn: Callable[[float, float], float]
+    fn: Callable[[float, float], float],
 ) -> Callable[
     [Storage, Shape, Strides, Storage, Shape, Strides, Storage, Shape, Strides], None
 ]:
@@ -309,14 +324,35 @@ def tensor_zip(
         b_shape: Shape,
         b_strides: Strides,
     ) -> None:
-        # TODO: Implement for Task 2.3.
-        raise NotImplementedError('Need to implement for Task 2.3')
+        # Simple version ::
+        # for i:
+        #    for j:
+        #        out[i, j] = fn(a[i, j], b[i, j])
+        # Broadcasted version (`a` and `b` might be smaller than `out`) ::
+        # for i:
+        #    for j:
+        #        out[i, j] = fn(a[i, 0], b[0, j])
+
+        bcshape = shape_broadcast(a_shape, b_shape)
+        bcshape = np.array(list(bcshape), dtype=np.int32)
+        assert all(bcshape == out_shape)
+
+        idx = np.zeros(len(bcshape), dtype=np.int32)
+        a_idx = np.zeros(len(a_shape), dtype=np.int32)
+        b_idx = np.zeros(len(b_shape), dtype=np.int32)
+        for li_out in range(len(out)):
+            to_index(li_out, bcshape, idx)
+            broadcast_index(idx, bcshape, a_shape, a_idx)
+            broadcast_index(idx, bcshape, b_shape, b_idx)
+            li_a = index_to_position(a_idx, a_strides)
+            li_b = index_to_position(b_idx, b_strides)
+            out[li_out] = fn(a_storage[li_a], b_storage[li_b])
 
     return _zip
 
 
 def tensor_reduce(
-    fn: Callable[[float, float], float]
+    fn: Callable[[float, float], float],
 ) -> Callable[[Storage, Shape, Strides, Storage, Shape, Strides, int], None]:
     """
     Low-level implementation of tensor reduce.
@@ -340,8 +376,36 @@ def tensor_reduce(
         a_strides: Strides,
         reduce_dim: int,
     ) -> None:
-        # TODO: Implement for Task 2.3.
-        raise NotImplementedError('Need to implement for Task 2.3')
+        # Simple version ::
+
+        #    for j:
+        #        out[1, j] = start
+        #        for i:
+        #            out[1, j] = fn(out[1, j], a[i, j])
+
+        a_idx = np.zeros(len(a_shape), dtype=np.int32)
+        out_idx = np.zeros_like(a_idx)
+
+        # print(f"out_shape {out_shape}")
+        # print(f"out_strides {out_strides}")
+        # print(f"a_shape {a_shape}")
+        # print(f"a_strides {a_strides}")
+        # print(f"reduce_dim {reduce_dim}")
+
+        # print(f"out: {out}")
+        # print(f"a_storage: {a_storage}")
+
+        # Don't need to do initialization, handled in funcation that calls this one
+        for li in range(len(a_storage)):
+            to_index(li, a_shape, a_idx)
+            out_idx = a_idx.copy()
+            out_idx[reduce_dim] = 0
+            li_a = index_to_position(a_idx, a_strides)
+            li_out = index_to_position(out_idx, out_strides)
+            # print(
+            #    f"li: {li}, a_idx: {a_idx}, out_idx: {out_idx}, li_a: {li_a}, li_out: {li_out}"
+            # )
+            out[li_out] = fn(out[li_out], a_storage[li_a])
 
     return _reduce
 

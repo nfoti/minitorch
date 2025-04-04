@@ -106,9 +106,10 @@ def backpropagate(variable: Variable, deriv: Any) -> None:
             node.accumulate_derivative(deriv_dict[node.name])
             continue
 
-        back = node.chain_rule(deriv_dict[node.name])
-        for v, d in back:
-            deriv_dict[v.name] += d
+        if not node.is_constant():
+            back = node.chain_rule(deriv_dict[node.name])
+            for v, d in back:
+                deriv_dict[v.name] += d
 
     return
 
