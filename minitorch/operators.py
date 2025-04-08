@@ -69,9 +69,9 @@ def sigmoid(x: float) -> float:
     """
     # different code paths for numerical stability
     if x >= 0:
-        ret = 1.0 / (1.0 + exp(-x))
+        ret = 1.0 / (1.0 + math.exp(-x))
     else:
-        ret = exp(x) / (1.0 + exp(x))
+        ret = math.exp(x) / (1.0 + math.exp(x))
     return ret
 
 
@@ -84,7 +84,10 @@ def relu(x: float) -> float:
     Returns:
         Value of ReLU at x
     """
-    return max(x, 0.0)
+    # This wasn't numba jit-able
+    #return max(x, 0.0)
+    # But this is
+    return x if x > 0 else 0.0
 
 
 EPS = 1e-6

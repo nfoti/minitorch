@@ -9,9 +9,7 @@ import numpy.typing as npt
 from numpy import array, float64
 from typing_extensions import TypeAlias
 
-from .operators import prod, reduce
-from .scalar_functions import wrap_tuple
-from minitorch import operators
+from .operators import prod
 
 MAX_DIMS = 32
 
@@ -63,8 +61,8 @@ def to_index(ordinal: int, shape: Shape, out_index: OutIndex) -> None:
         out_index : return index corresponding to position.
 
     """
-    assert len(shape) == len(out_index)
-    for i in range(len(out_index) - 1):
+    #assert len(shape) == len(out_index)
+    for i in range(out_index.shape[0] - 1):
         stride = shape[i + 1 :].prod()
         out_index[i] = ordinal // stride
         ordinal = ordinal % stride
@@ -91,16 +89,22 @@ def broadcast_index(
     Returns:
         None
     """
-    # Check that shapes are broadcastable - shape_broadcast throws an exception if not
-    bshape = shape_broadcast(big_shape, shape)
-    pad_l = len(big_shape) - len(shape)
-    shape_pad = [1] * pad_l + list(shape)
+    # This is a jit-able implementation of below
+    ndims = len(big_shape)
+    pad_l = ndims - len(shape)
+    for i in range(out_index.shape[0]):
+        if big_shape[pad_l+i] == shape[i]:
+            out_index[i] = big_index[pad_l+i]
+        else:
+            out_index[i] = 0
 
-    # Either use the index of big_index or 0 since we know either the dims matched or one is 1
-    out_index_pad = [
-        bi if d1 == d2 else 0 for bi, d1, d2 in zip(big_index, big_shape, shape_pad)
-    ]
-    out_index[:] = out_index_pad[pad_l:]
+    #shape_pad = np.ones(ndims, dtype=np.int32)
+    #shape_pad[pad_l:] = shape
+    ## Either use the index of big_index or 0 since we know either the dims matched or one is 1
+    #out_index_pad = [
+    #    bi if d1 == d2 else 0 for bi, d1, d2 in zip(big_index, big_shape, shape_pad)
+    #]
+    #out_index[:] = out_index_pad[pad_l:]
     return
 
 

@@ -7,7 +7,6 @@ from typing_extensions import Protocol
 
 from . import operators
 from .tensor_data import (
-    MAX_DIMS,
     broadcast_index,
     index_to_position,
     shape_broadcast,
@@ -16,7 +15,7 @@ from .tensor_data import (
 
 if TYPE_CHECKING:
     from .tensor import Tensor
-    from .tensor_data import Index, Shape, Storage, Strides
+    from .tensor_data import Shape, Storage, Strides
 
 
 class MapProto(Protocol):
@@ -385,15 +384,6 @@ def tensor_reduce(
 
         a_idx = np.zeros(len(a_shape), dtype=np.int32)
         out_idx = np.zeros_like(a_idx)
-
-        # print(f"out_shape {out_shape}")
-        # print(f"out_strides {out_strides}")
-        # print(f"a_shape {a_shape}")
-        # print(f"a_strides {a_strides}")
-        # print(f"reduce_dim {reduce_dim}")
-
-        # print(f"out: {out}")
-        # print(f"a_storage: {a_storage}")
 
         # Don't need to do initialization, handled in funcation that calls this one
         for li in range(len(a_storage)):
